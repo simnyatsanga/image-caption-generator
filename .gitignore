@@ -1,9 +1,11 @@
 .DS_Store
+__pycache__/
 Flickr8k_Data_Set/
 Flickr8k_image_data/
-Flickr_8k_text_data/
+Flickr8k_text_data/
 model_checkpoints/
 unseen_images/
+static/
 *.txt
 *.pkl
 *.png
