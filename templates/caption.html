@@ -3,7 +3,7 @@
       <title>Generated caption</title>
   </head>
   <body>
-      <img src="{{ user_image }}" alt="User Image">
+      <img src="{{ url_for('static', filename=captioned_image) }}" alt="Captioned Image">
       <p>{{ caption }}</p>
   </body>
 </html>

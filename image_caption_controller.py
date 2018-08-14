@@ -1,10 +1,10 @@
 import os
 from image_caption_generator import ImageCaptionGenerator
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
 from werkzeug.utils import secure_filename
 
 
-UPLOAD_FOLDER = os.path.join('static', 'uploaded_images')
+UPLOAD_FOLDER = os.path.join('static')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 app = Flask(__name__)
@@ -31,14 +31,14 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file',
+            return redirect(url_for('get_caption',
                                     filename=filename))
     return render_template("index.html")
 
-@app.route('/<filename>')
-def uploaded_file(filename):
+@app.route('/caption/<path:filename>', methods=['GET'])
+def get_caption(filename):
     imgcptgen = ImageCaptionGenerator()
     full_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     model, tokenizer, max_length = imgcptgen.testing_params()
     caption = imgcptgen.test(model, tokenizer, max_length, full_filename)
-    return render_template("caption.html", user_image = full_filename, caption = caption)
+    return render_template("caption.html", captioned_image = filename, caption = caption)
