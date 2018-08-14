@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import string
 import argparse
@@ -26,6 +27,7 @@ from keras.layers import Embedding
 from keras.layers import Dropout
 from keras.layers.merge import add
 from keras.callbacks import ModelCheckpoint
+from keras import backend as keras_backend
 
 
 class ImageCaptionGenerator(object):
@@ -420,6 +422,10 @@ class ImageCaptionGenerator(object):
 		return max_length
 
 	def load_pretrained_model(self, filename):
+		# Clear the session before loading the model
+		# Solution to an error when try to load the model multiple times when captioning multiple images
+		# Reference: https://stackoverflow.com/questions/40785224/tensorflow-cannot-interpret-feed-dict-key-as-tensor
+		keras_backend.clear_session()
 		print('Loading latest model ...')
 		return load_model(filename)
 
@@ -476,6 +482,7 @@ class ImageCaptionGenerator(object):
 		photo = self.extract_features(photo_file)
 		# generate description
 		description = self.generate_desc(self.pretrained_model, self.tokenizer, photo, self.max_length)
+		description = re.sub('endseq', '', re.sub('startseq', '', description))
 		return description
 
 
