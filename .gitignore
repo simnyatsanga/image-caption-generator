@@ -8,6 +8,7 @@ Flickr10_text_data/
 model_checkpoints/
 unseen_images/
 static/uploaded_images/
+caption_this_tensorflow/data/
 *.txt
 *.pkl
 *.png
