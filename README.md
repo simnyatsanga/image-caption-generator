@@ -1,2 +1,2 @@
-# Image Caption Generator
-An Image Caption Generator implemented in Keras
+# Image Caption Generators
+Image captioning examples implemented in TensorFlow and Keras
