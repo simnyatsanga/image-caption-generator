@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from werkzeug.utils import secure_filename
 
 
-UPLOAD_FOLDER = os.path.join('static')
+UPLOAD_FOLDER = os.path.join('static', 'uploaded_images')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 app = Flask(__name__)
@@ -41,4 +41,4 @@ def get_caption(filename):
     full_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     model, tokenizer, max_length = imgcptgen.testing_params()
     caption = imgcptgen.test(model, tokenizer, max_length, full_filename)
-    return render_template("caption.html", captioned_image = filename, caption = caption)
+    return render_template("caption.html", captioned_image = 'uploaded_images/' + filename, caption = caption)

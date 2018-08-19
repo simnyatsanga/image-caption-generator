@@ -1,9 +1,10 @@
 <html>
   <head>
       <title>Generated caption</title>
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/caption.css') }}">
   </head>
   <body>
-      <img src="{{ url_for('static', filename=captioned_image) }}" alt="Captioned Image">
-      <p>{{ caption }}</p>
+      <img src="{{ url_for('static', filename=captioned_image) }}" alt="Captioned Image" class="caption-img">
+      <p class="caption-txt">{{ caption }}</p>
   </body>
 </html>

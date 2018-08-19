@@ -12,6 +12,8 @@ from numpy import argmax
 from nltk.translate.bleu_score import corpus_bleu
 from keras.utils import to_categorical
 from keras.applications.vgg16 import VGG16
+from keras.applications.vgg19 import VGG19
+from keras.applications.inception_v3 import InceptionV3
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.text import Tokenizer
@@ -39,15 +41,23 @@ class ImageCaptionGenerator(object):
 		self.tokenizer = self.prepare_tokenizer(self.training_desc)
 		self.vocab_size = self.summarize_vocab(self.tokenizer)
 		self.max_length = self.max_length_desc(self.training_desc)
-		self.pretrained_model = self.load_pretrained_model('model_checkpoints/model_99.h5')
+		self.pretrained_model = self.load_pretrained_model('model_checkpoints/model_59.h5')
 
 
 	def testing_params(self):
 		return self.pretrained_model, self.tokenizer, self.max_length
 
+	def training_params(self):
+		return self.vocab_size, self.training_desc, self.training_features, self.tokenizer, self.max_length
+
+	def evaluation_params(self):
+		return self.pretrained_model, self.test_data_descriptions, self.test_data_features, self.tokenizer, self.max_length
+
 	def extract_features(self, source):
 		# load the model
-		model = VGG16()
+		model = InceptionV3()
+
+		print('Using %s model to extract features ...' % model.name)
 		# re-structure the model
 		model.layers.pop()
 		model = Model(inputs=model.inputs, outputs=model.layers[-1].output)
@@ -56,9 +66,9 @@ class ImageCaptionGenerator(object):
 		# extract features from each photo
 		if os.path.isdir(source):
 			features = dict()
-			for name in listdir(directory):
+			for name in listdir(source):
 				# load an image from file
-				filename = directory + '/' + name
+				filename = source + '/' + name
 				feature = self.extract_feature(filename, model)
 				# get image id
 				image_id = name.split('.')[0]
@@ -75,7 +85,8 @@ class ImageCaptionGenerator(object):
 	# extract a feature for a single photo
 	def extract_feature(self, filename, model):
 		# load the photo
-		image = load_img(filename, target_size=(224, 224))
+		# target_size: VGG16/VGG19 - (224,224) / InceptionV3 - (299, 299)
+		image = load_img(filename, target_size=(299, 299))
 		# convert the image pixels to a numpy array
 		image = img_to_array(image)
 		# reshape data for the model
@@ -209,7 +220,7 @@ class ImageCaptionGenerator(object):
 	# fit a tokenizer given caption descriptions
 	# every string extracted from the list of descriptions is encoded individually
 	def create_tokenizer(self, descriptions):
-		lines = to_lines(descriptions)
+		lines = self.to_lines(descriptions)
 		tokenizer = Tokenizer()
 		tokenizer.fit_on_texts(lines)
 		return tokenizer
@@ -279,7 +290,8 @@ class ImageCaptionGenerator(object):
 	#define the captioning model
 	def define_model(self, vocab_size, max_length):
 		# feature extractor model
-		inputs1 = Input(shape=(4096,))
+		# shape - VGG16/VGG19 - (4096,) / InceptionV3 - (2048,)
+		inputs1 = Input(shape=(2048,))
 		fe1 = Dropout(0.5)(inputs1)
 		fe2 = Dense(256, activation='relu')(fe1)
 		# sequence model
@@ -426,7 +438,7 @@ class ImageCaptionGenerator(object):
 		# Solution to an error when try to load the model multiple times when captioning multiple images
 		# Reference: https://stackoverflow.com/questions/40785224/tensorflow-cannot-interpret-feed-dict-key-as-tensor
 		keras_backend.clear_session()
-		print('Loading latest model ...')
+		print('Loading latest model - %s' % filename)
 		return load_model(filename)
 
 
@@ -445,7 +457,8 @@ class ImageCaptionGenerator(object):
 
 
 	def clean_old_model_checkpoints(self):
-		models = glob.glob('*.h5')
+		print('Clearing old model checkpoints...')
+		models = glob.glob('model_checkpoints/*.h5')
 		for model in models:
 			try:
 				os.remove(model)
@@ -459,7 +472,7 @@ class ImageCaptionGenerator(object):
 		model = self.define_model(vocab_size, max_length)
 
 		# train the model, run epochs manually and save after each epoch
-		epochs = 100
+		epochs = 60
 		steps = len(training_data_descriptions)
 		for i in range(epochs):
 			print('Running epoch %d' %i)
@@ -468,7 +481,7 @@ class ImageCaptionGenerator(object):
 			# fit for one epoch
 			model.fit_generator(generator, epochs=1, steps_per_epoch=steps, verbose=1)
 			# save model
-			model.save('model_' + str(i) + '.h5')
+			model.save('model_checkpoints/model_' + str(i) + '.h5')
 
 
 	def evaluate(self, model, test_data_descriptions, test_features, tokenizer, max_length):
@@ -486,31 +499,34 @@ class ImageCaptionGenerator(object):
 		return description
 
 
-# if __name__ == '__main__':
-# 	parser = argparse.ArgumentParser()
-# 	parser.add_argument('--op', default='evaluate')
-#
-# 	# All the preparation
-# 	prepare_image_data()
-# 	prepare_text_data()
-# 	training_features, training_desc = prepare_training_data()
-# 	test_data_features, test_data_descriptions = load_test_data()
-# 	tokenizer = prepare_tokenizer(training_desc)
-# 	vocab_size = summarize_vocab(tokenizer)
-# 	max_length = max_length_desc(training_desc)
-# 	pretrained_model = load_pretrained_model('model_99.h5')
-#
-#
-# 	args = parser.parse_args()
-#
-# 	if args.op == 'train':
-# 		print('ALL SET FOR TRAINING ...')
-# 		train(vocab_size, training_desc, training_features, tokenizer, max_length)
-# 	elif args.op == 'evaluate':
-# 		print('ALL SET FOR EVALUATING ...')
-# 		evaluate(pretrained_model, test_data_descriptions, test_data_features, tokenizer, max_length)
-# 	elif args.op == 'test':
-# 		print('ALL SET FOR TESTING ...')
-# 		test(pretrained_model, tokenizer, max_length)
-# 	else:
-# 		raise Exception('Choose valid operation: \'train\', \'evaluate\' or \'test\'')
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--op', default='evaluate')
+
+	# All the preparation
+	imgcptgen = ImageCaptionGenerator()
+	# prepare_image_data()
+	# prepare_text_data()
+	# training_features, training_desc = prepare_training_data()
+	# test_data_features, test_data_descriptions = load_test_data()
+	# tokenizer = prepare_tokenizer(training_desc)
+	# vocab_size = summarize_vocab(tokenizer)
+	# max_length = max_length_desc(training_desc)
+	# pretrained_model = load_pretrained_model('model_99.h5')
+
+
+	args = parser.parse_args()
+
+	if args.op == 'train':
+		print('ALL SET FOR TRAINING ...')
+		vocab_size, training_desc, training_features, tokenizer, max_length = imgcptgen.training_params()
+		imgcptgen.train(vocab_size, training_desc, training_features, tokenizer, max_length)
+	elif args.op == 'evaluate':
+		print('ALL SET FOR EVALUATING ...')
+		pretrained_model, test_data_descriptions, test_data_features, tokenizer, max_length = imgcptgen.evaluation_params()
+		imgcptgen.evaluate(pretrained_model, test_data_descriptions, test_data_features, tokenizer, max_length)
+	elif args.op == 'test':
+		print('ALL SET FOR TESTING ...')
+		test(pretrained_model, tokenizer, max_length)
+	else:
+		raise Exception('Choose valid operation: \'train\', \'evaluate\' or \'test\'')

@@ -3,9 +3,11 @@ __pycache__/
 Flickr8k_Data_Set/
 Flickr8k_image_data/
 Flickr8k_text_data/
+Flickr10_image_data/
+Flickr10_text_data/
 model_checkpoints/
 unseen_images/
-static/
+static/uploaded_images/
 *.txt
 *.pkl
 *.png

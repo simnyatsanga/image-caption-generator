@@ -1,0 +1,9 @@
+.caption-img {
+  width: 20em;
+  height: 20em;
+}
+
+.caption-txt {
+  font-style: italic;
+  font-family: cursive;
+}
