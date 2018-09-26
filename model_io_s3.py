@@ -18,20 +18,20 @@ if __name__ == '__main__':
     parser.add_argument('--model_name')
     parser.add_argument('--aws_access_key_id')
     parser.add_argument('--aws_secret_access_key')
+    parser.add_argument('--bucket_name')
 
     args = parser.parse_args()
 
     if (not args.aws_access_key_id) or (not args.aws_secret_access_key):
         raise Exception('Please specify S3 credentials.')
 
-    bucket_name = 'masters-ml-models'
     s3_client = boto3.client('s3', aws_access_key_id=args.aws_access_key_id, aws_secret_access_key=args.aws_secret_access_key)
 
     if args.op == 'upload' and args.source_path:
-        upload_model(s3_client, bucket_name, args.source_path)
+        upload_model(s3_client, args.bucket_name, args.source_path)
     elif args.op == 'upload' and not args.source_path:
         raise Exception('Please specify \'source_path\' for upload.')
     elif args.op == 'download' and args.model_name:
-        download_model(s3_client, bucket_name, args.model_name)
+        download_model(s3_client, args.bucket_name, args.model_name)
     elif args.op == 'download' and not args.model_name:
         raise Exception('Please specify \'model_name\' for download.')
